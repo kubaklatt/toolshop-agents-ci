@@ -2,9 +2,12 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
+import { catalog } from './support/catalog.js';
 
 test.describe( 'Search', () => {
 	test( 'Searching for a term with no matches shows an explicit empty state', async ( { page } ) => {
+		const { cards, pageButtons } = catalog( page );
+
 		await page.goto( '/' );
 
 		const searchTerm = 'zzzznoresultsxyz123';
@@ -15,7 +18,10 @@ test.describe( 'Search', () => {
 
 		await expect( page.getByTestId( 'search-caption' ) ).toContainText( `Searched for: ${ searchTerm }` );
 		await expect( page.getByTestId( 'no-results' ) ).toHaveText( 'There are no products found.' );
-		await expect( page.locator( '[data-test^="product-"]' ) ).toHaveCount( 0 );
-		await expect( page.locator( 'ul.pagination' ) ).toHaveCount( 0 );
+
+		// The assertion that carries this test: an empty state that still renders
+		// the previous results is the bug this scenario exists to catch.
+		await expect( cards ).toHaveCount( 0 );
+		await expect( pageButtons ).toHaveCount( 0 );
 	} );
 } );

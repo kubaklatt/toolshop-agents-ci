@@ -21,8 +21,9 @@ import { test, expect } from '@playwright/test';
 test( 'seed: storefront lists products', async ( { page } ) => {
 	await page.goto( '/' );
 
-	// Prefix match — never a whole ULID.
-	const productCards = page.locator( '[data-test^="product-"]' );
+	// Prefix match — never a whole ULID. Anchored to `a` because `product-name`
+	// and `product-price` share the prefix and would otherwise be counted as cards.
+	const productCards = page.locator( 'a[data-test^="product-"]' );
 
 	await expect( productCards.first() ).toBeVisible();
 	await expect( productCards ).not.toHaveCount( 0 );
