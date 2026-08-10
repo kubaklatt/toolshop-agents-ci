@@ -1,0 +1,21 @@
+{
+  "name": "toolshop-agents-ci",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Playwright test agents (planner/generator/healer) wired into CI, with guardrails that catch the agent cheating.",
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --project=ui",
+    "test:api": "playwright test --project=api-clean"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.2.0",
+    "typescript": "7.0.2"
+  }
+}
