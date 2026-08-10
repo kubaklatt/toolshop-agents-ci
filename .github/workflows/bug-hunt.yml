@@ -1,0 +1,73 @@
+name: bug hunt
+
+# Two checks that both work backwards: they fail when something *passes*.
+#
+#   bug-hunt   the API suite must fail against a known-broken build
+#   guardrails the lint rules must still reject what an agent does to force green
+#
+# A normal green pipeline says "the tests passed". These two say "the tests and
+# the rules are still capable of failing", which is the part nobody checks.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '30 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: bug-hunt-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+
+jobs:
+  bug-hunt:
+    name: suite must catch known defects
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: corepack enable pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # No browsers needed: the api projects only use the request fixture.
+      - name: Run the API suite against the broken build
+        run: pnpm bug-hunt
+
+      - name: Upload the broken-build report
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: bug-hunt-report
+          path: reports/buggy.json
+          retention-days: 14
+
+  guardrails:
+    name: guardrails must still bite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: corepack enable pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint the suite
+        run: pnpm lint
+
+      - name: Prove every guardrail still fires
+        run: pnpm guardrails
