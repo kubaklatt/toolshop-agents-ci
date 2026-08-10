@@ -104,6 +104,10 @@ yet — is in `docs/trade-offs.md`.
 - **`heal.yml` has not run yet.** GitHub Actions cannot start on this account
   ("your account is locked due to a billing issue"), so the healer workflow is
   reviewed but unexercised. I would rather say that than imply a green run exists.
+- **No checkout coverage.** I pointed the same planner at the authenticated
+  cart → checkout → invoice flow and killed it after 42 minutes with nothing
+  written; the read-only catalogue took 19. Exploring a stateless surface is
+  cheap, exploring a stateful flow was not. Details in `docs/trade-offs.md`.
 - **No mobile.** Playwright covers mobile web viewports, not native apps. Appium
   is not here and I am not pretending otherwise.
 - The demo API is a shared public sandbox. Tests assert on shapes and invariants
