@@ -7,3 +7,4 @@ playwright/.cache/
 .auth/
 *.log
 .DS_Store
+.playwright-mcp/
