@@ -71,6 +71,11 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # A user-scoped token, not the built-in GITHUB_TOKEN. GitHub does not
+          # run workflows on pull requests opened by GITHUB_TOKEN — a recursion
+          # guard — so the guardrails would never judge the healer's own PR,
+          # which is the whole point of this workflow.
+          github_token: ${{ secrets.GH_PAT }}
           additional_permissions: |
             actions: read
           claude_args: >-
