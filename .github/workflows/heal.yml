@@ -119,7 +119,50 @@ jobs:
             or a race. If it is a product bug, the correct outcome is to leave the
             test failing and explain the defect — do not "fix" the test.
 
-            Verify with `pnpm lint` and by running the affected project, then open
-            a pull request against `main`. Never push to `main` directly. In the
-            description, state plainly what you changed, what you could not
-            resolve, and what a reviewer should check by hand.
+            Verify by running the affected project through your test tools. Do
+            not create branches, commit, or open the pull request yourself — you
+            have no shell and no git, and you do not need them. Edit the test
+            files; the workflow collects whatever you changed and opens the pull
+            request for you.
+
+            Write your diagnosis into tests/HEALER_NOTES.md, overwriting it: what
+            you changed and why, which of the four verdicts it is, what you could
+            not resolve, and what a reviewer should check by hand. That file
+            becomes the pull request description.
+
+      # The agent has no shell and no git — deliberately. It edits test files;
+      # delivering them is the workflow's job. Splitting it this way is also what
+      # keeps the constraint real: the agent cannot reach main even if its
+      # instructions were ignored, because it has nothing to push with.
+      - name: Open a pull request with whatever the healer changed
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if git diff --quiet -- tests/; then
+            echo "The healer changed nothing under tests/ — no pull request to open." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          BRANCH="healer/$(date -u +%Y%m%d-%H%M%S)"
+          git config user.name "playwright-test-healer"
+          git config user.email "healer@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add tests/
+          git commit -m "fix(ui): healer's proposed repair for the failing suite
+
+          Written by Playwright's playwright-test-healer agent running in CI, not
+          by a human. Delivered by .github/workflows/heal.yml.
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          git push origin "$BRANCH"
+
+          BODY="tests/HEALER_NOTES.md"
+          [ -f "$BODY" ] || echo "The healer left no notes." > "$BODY"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Healer: proposed repair for the failing suite" \
+            --body-file "$BODY"
