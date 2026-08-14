@@ -78,9 +78,20 @@ jobs:
           github_token: ${{ secrets.GH_PAT }}
           additional_permissions: |
             actions: read
+          # The first attempt used acceptEdits alone. That auto-accepts file
+          # edits but still prompts for MCP tool calls — and Playwright's healer
+          # has no Bash at all; it drives tests exclusively through the
+          # playwright-test MCP server. Cut off from MCP it cannot run a test or
+          # read a snapshot, so it spent 47 turns collecting 24 permission
+          # denials and changed nothing.
+          #
+          # The fix is an explicit allowlist rather than disabling permission
+          # checks: these are exactly the tools the healer's own definition
+          # declares, and nothing else. No shell, no network, no git.
           claude_args: >-
             --agent playwright-test-healer
             --permission-mode acceptEdits
+            --allowedTools "Read Glob Grep LS Edit MultiEdit Write mcp__playwright-test"
           prompt: |
             The `tests` workflow failed on this commit. Diagnose and repair the
             failing Playwright tests.
