@@ -4,8 +4,13 @@ import type { APIRequestContext } from '@playwright/test';
  * Crockford base32, 26 characters — the shape of every id this API is
  * documented to return. Asserting the *shape* rather than a value is what
  * makes these tests survive a database reseed.
+ *
+ * Crockford base32 is explicitly case-insensitive (decoders must accept
+ * upper, lower, or mixed case) and this API leans on that: product/category
+ * ids come back upper-case, brand ids come back lower-case. Both are valid
+ * ULIDs, so the pattern matches either case rather than assuming upper-case.
  */
-export const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+export const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/i;
 
 export const DEMO_CUSTOMER = {
 	email: 'customer@practicesoftwaretesting.com',
