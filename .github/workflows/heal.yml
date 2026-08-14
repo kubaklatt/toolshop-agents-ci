@@ -46,6 +46,10 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # claude-code-action exchanges a GitHub OIDC token during setup. Without
+      # this the job dies before the agent starts, with "Could not fetch an OIDC
+      # token" — which reads like a problem with the Anthropic key and is not one.
+      id-token: write
     steps:
       - uses: actions/checkout@v7
         with:
