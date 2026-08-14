@@ -81,6 +81,27 @@ output would have bought a suite with three broken tests and a false green.
   `typescript <6.1.0`. Working guardrails are worth more here than a newer
   compiler.
 
+## What happened when I came back to it four days later
+
+Re-ran everything cold. API suite, bug hunt and guardrails: unchanged. The UI
+suite failed once — `category-brand-filters.spec.ts`, on the final assertion that
+the catalogue is restored after the filter is cleared. It then passed 20 times in
+a row, and 25 more after the fix.
+
+Triaged with `.claude/skills/flake-triage`. Verdict: timing — not a product bug
+and not a test bug. The checkboxes clear instantly, but the grid only catches up
+after a round trip to a shared public backend, and on a cold run that exceeded
+the 5s default.
+
+That skill says a raised timeout is not a fix for a race. It is not one here
+either: this is a slow dependency, not a race, and telling those apart is the
+entire reason to triage before touching the test. The redundant page-count
+assertion that sat alongside it was deleted — it checked the same restore through
+a more brittle signal.
+
+Worth recording that the only flake in this suite was mine, in the file I had
+already rewritten once.
+
 ## Time lost to things that were nobody's fault
 
 Recorded because they are what actually eats an afternoon:

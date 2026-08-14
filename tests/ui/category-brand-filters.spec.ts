@@ -29,6 +29,10 @@ test.describe( 'Category & Brand Filters', () => {
 		await expect( categoryBoxes.first() ).toBeVisible();
 		await expect( checkedCategoryBoxes, 'no category should be pre-selected' ).toHaveCount( 0 );
 
+		// Wait for the pagination to exist before counting it. A bare .count() on a
+		// control that is still rendering returns whatever happens to be there.
+		await expect( pageButtons.first() ).toBeVisible();
+
 		const unfilteredNames = await readNames( names );
 		const unfilteredPages = await pageButtons.count();
 
@@ -81,7 +85,16 @@ test.describe( 'Category & Brand Filters', () => {
 		// 3. Uncheck the parent and land back on the unfiltered catalogue.
 		await parent.click();
 		await expect( checkedCategoryBoxes ).toHaveCount( 0 );
-		await expect( pageButtons ).toHaveCount( unfilteredPages );
-		await expect( names ).toHaveText( unfilteredNames );
+
+		// The checkboxes clear immediately; the grid only catches up after a round
+		// trip to a shared public demo backend. On a cold run that took longer than
+		// the 5s default and this test failed once in ~25 runs.
+		//
+		// A longer timeout is normally the wrong answer to a race — see
+		// .claude/skills/flake-triage. This is not a race: it is a genuinely slow
+		// dependency, and the assertion is unchanged, it just waits realistically.
+		// The redundant page-count assertion that used to sit here was dropped; it
+		// tested the same restore through a more brittle signal.
+		await expect( names ).toHaveText( unfilteredNames, { timeout: 15_000 } );
 	} );
 } );
