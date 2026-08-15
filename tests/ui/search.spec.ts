@@ -13,7 +13,7 @@ test.describe( 'Search', () => {
 		const searchTerm = 'zzzznoresultsxyz123';
 
 		// 1. Type a nonsense keyword guaranteed not to match any product, e.g. 'zzzznoresultsxyz123', into the search box and submit.
-		await page.getByTestId( 'search-input' ).fill( searchTerm );
+		await page.getByTestId( 'search-query' ).fill( searchTerm );
 		await page.getByTestId( 'search-submit' ).click();
 
 		await expect( page.getByTestId( 'search-caption' ) ).toContainText( `Searched for: ${ searchTerm }` );
