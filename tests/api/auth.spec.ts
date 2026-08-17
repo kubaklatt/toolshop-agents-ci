@@ -14,8 +14,20 @@ test( 'POST /users/login issues a token for the demo customer', async ( { reques
 } );
 
 test( 'POST /users/login rejects a wrong password with 401', async ( { request } ) => {
+	// Deliberately *not* DEMO_CUSTOMER here. This app locks an account after
+	// enough failed attempts (see the 423 handling in loginAsCustomer), and the
+	// demo customer is a single shared fixture hit by every run of this suite,
+	// everywhere. Hammering it with a wrong password on every CI run is what
+	// locked it out in the first place ("Account locked, too many failed
+	// attempts. Please contact the administrator.") — a self-inflicted denial of
+	// service against shared state. A made-up address exercises the same
+	// "bad credentials" path without leaving a mark on an account other tests
+	// depend on.
 	const response = await request.post( '/users/login', {
-		data: { ...DEMO_CUSTOMER, password: 'definitely-not-the-password' }
+		data: {
+			email: `not-a-real-user-${ Date.now() }@practicesoftwaretesting.com`,
+			password: 'definitely-not-the-password'
+		}
 	} );
 
 	expect( response.status() ).toBe( 401 );
