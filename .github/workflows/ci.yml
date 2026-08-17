@@ -45,9 +45,7 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
 
       - name: Tests against the healthy application
-        run: |
-          pnpm test:api
-          pnpm test:ui
+        run: pnpm test
 
       - name: Prove the API tests catch the known-broken build
         run: pnpm bug-hunt

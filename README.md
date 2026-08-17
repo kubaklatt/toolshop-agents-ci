@@ -1,5 +1,7 @@
 # AI-generated Playwright tests, reviewed like production code
 
+[![test suite](https://github.com/kubaklatt/toolshop-agents-ci/actions/workflows/ci.yml/badge.svg)](https://github.com/kubaklatt/toolshop-agents-ci/actions/workflows/ci.yml)
+
 This is a small Playwright suite for the public
 [Toolshop](https://practicesoftwaretesting.com) demo application. I used
 Playwright's Claude agents to explore the catalogue, plan tests and generate four
@@ -71,8 +73,7 @@ pnpm exec playwright install chromium
 pnpm typecheck
 pnpm lint
 pnpm guardrails
-pnpm test:api
-pnpm test:ui
+pnpm test       # 5 UI + 10 healthy-API tests
 pnpm bug-hunt
 ```
 
@@ -81,11 +82,14 @@ AI-written test can become falsely green: skips, `fixme`, focused tests, missing
 assertions, conditional test logic, fixed sleeps, `networkidle` and commented-out
 tests.
 
+CI keeps one retry so a trace is captured, but `failOnFlakyTests` ensures a test
+that passes only on retry still fails the workflow.
+
 ## Repository map
 
 ```text
 docs/prompt-to-test.md        prompt → generated test → review → green
-specs/product-catalog.md      raw planner output
+specs/product-catalog.md      raw planner output (limitations noted in specs/ABOUT.md)
 tests/ui/                     four generated scenarios after human review
 tests/api/                    API contract and authorisation tests
 scripts/assert-bugs-caught.ts proof that the API tests detect known defects

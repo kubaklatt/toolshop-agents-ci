@@ -45,8 +45,8 @@ const agentGuardrails = {
 	'playwright/prefer-web-first-assertions': 'error',
 	'playwright/missing-playwright-await': 'error',
 
-	// nth(0)/first() on an unscoped locator quietly asserts about "whichever
-	// element happened to come back first".
+	// Element handles and page evaluation bypass locator retryability and make
+	// synchronization the test author's responsibility.
 	'playwright/no-element-handle': 'error',
 	'playwright/no-eval': 'error',
 	'playwright/no-page-pause': 'error'

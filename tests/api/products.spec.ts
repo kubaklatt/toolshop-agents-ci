@@ -35,22 +35,37 @@ test( 'GET /products?sort=price,asc orders by ascending price', async ( { reques
 } );
 
 test( 'GET /products?between=price filters to the requested range', async ( { request } ) => {
-	const response = await request.get( '/products?between=price,1,10' );
+	// Derive a non-empty price band from live data. Accepting an empty response
+	// would make the range assertions vacuously true and test no filtering at all.
+	const seedResponse = await request.get( '/products?sort=price,asc' );
+	expect( seedResponse.status() ).toBe( 200 );
+
+	const seedPrices: number[] = ( await seedResponse.json() ).data.map( ( p: { price: number } ) => p.price );
+	expect( seedPrices.length ).toBeGreaterThan( 1 );
+
+	const min = Math.min( ...seedPrices );
+	const max = Math.max( ...seedPrices );
+	const response = await request.get( `/products?between=price,${ min },${ max }` );
 
 	expect( response.status() ).toBe( 200 );
 
 	const prices: number[] = ( await response.json() ).data.map( ( p: { price: number } ) => p.price );
 
-	// The demo data may legitimately contain nothing in this band after a
-	// reseed, so an empty result is acceptable — a price outside it is not.
+	expect( prices.length, 'the live-data price band must return products' ).toBeGreaterThan( 0 );
+
 	for ( const price of prices ) {
-		expect( price ).toBeGreaterThanOrEqual( 1 );
-		expect( price ).toBeLessThanOrEqual( 10 );
+		expect( price ).toBeGreaterThanOrEqual( min );
+		expect( price ).toBeLessThanOrEqual( max );
 	}
 } );
 
 test( 'GET /products/{id} agrees with the list entry it came from', async ( { request } ) => {
-	const list = await ( await request.get( '/products?page=1' ) ).json();
+	const listResponse = await request.get( '/products?page=1' );
+	expect( listResponse.status() ).toBe( 200 );
+
+	const list = await listResponse.json();
+	expect( list.data.length ).toBeGreaterThan( 0 );
+
 	const listed = list.data[ 0 ];
 
 	const response = await request.get( `/products/${ listed.id }` );

@@ -15,7 +15,12 @@ test( 'POST /users/login issues a token for the demo customer', async ( { reques
 
 test( 'POST /users/login rejects a wrong password with 401', async ( { request } ) => {
 	const response = await request.post( '/users/login', {
-		data: { ...DEMO_CUSTOMER, password: 'definitely-not-the-password' }
+		// Never hammer the shared demo customer with bad credentials: repeated CI
+		// runs would eventually lock the account used by the positive-path tests.
+		data: {
+			email: `not-a-real-user-${ Date.now() }@example.invalid`,
+			password: 'definitely-not-the-password'
+		}
 	} );
 
 	expect( response.status() ).toBe( 401 );
