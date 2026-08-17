@@ -10,8 +10,9 @@ One scenario, end to end, including the part that is usually left out.
 - I replaced the race with a polled invariant and added a precondition that makes
   a meaningless ordering assertion fail loudly.
 
-The raw generator output is commit `02ddf74`; the reviewed version is `52d9baf`.
-The rest of this page shows the evidence.
+The [raw generator output](https://github.com/kubaklatt/toolshop-agents-ci/commit/02ddf74)
+and [human review diff](https://github.com/kubaklatt/toolshop-agents-ci/compare/02ddf74...52d9baf)
+are both preserved. The rest of this page shows the evidence.
 
 I picked the sorting test for this walkthrough because it failed in two different
 ways: one that tooling caught, and one that no tool could have caught. The gap
