@@ -46,6 +46,6 @@ export function catalog( page: Page ) {
 
 		sort: page.getByTestId( 'sort' ),
 		pageButtons: page.getByRole( 'button', { name: /^Page-\d+$/ } ),
-		pageButton: ( number: number ) => page.getByRole( 'button', { name: `Page-${ number }` } )
+		paginationButton: ( number: number ) => page.getByRole( 'button', { name: `Page-${ number }` } )
 	};
 }

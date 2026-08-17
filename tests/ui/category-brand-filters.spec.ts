@@ -90,9 +90,9 @@ test.describe( 'Category & Brand Filters', () => {
 		// trip to a shared public demo backend. On a cold run that took longer than
 		// the 5s default and this test failed once in ~25 runs.
 		//
-		// A longer timeout is normally the wrong answer to a race — see
-		// .claude/skills/flake-triage. This is not a race: it is a genuinely slow
-		// dependency, and the assertion is unchanged, it just waits realistically.
+		// A longer timeout is normally the wrong answer to a race. This is a
+		// genuinely slow dependency: the assertion is unchanged and waits for the
+		// same observable state, but with a realistic bound.
 		// The redundant page-count assertion that used to sit here was dropped; it
 		// tested the same restore through a more brittle signal.
 		await expect( names ).toHaveText( unfilteredNames, { timeout: 15_000 } );

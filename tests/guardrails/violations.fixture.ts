@@ -15,7 +15,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-// The healer's escape hatch: cannot fix it, so silence it.
+// A generated test's escape hatch: cannot fix it, so silence it.
 test.fixme( 'fixme instead of a fix', async ( { page } ) => {
 	await expect( page.getByRole( 'heading' ) ).toBeVisible();
 } );

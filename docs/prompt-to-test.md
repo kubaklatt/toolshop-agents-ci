@@ -2,6 +2,17 @@
 
 One scenario, end to end, including the part that is usually left out.
 
+## The 60-second version
+
+- Claude generated four Playwright scenarios and said they looked correct.
+- Three failed on their first run; lint identified only part of the problem.
+- One sorting test could also pass with a single product while proving no order.
+- I replaced the race with a polled invariant and added a precondition that makes
+  a meaningless ordering assertion fail loudly.
+
+The raw generator output is commit `02ddf74`; the reviewed version is `52d9baf`.
+The rest of this page shows the evidence.
+
 I picked the sorting test for this walkthrough because it failed in two different
 ways: one that tooling caught, and one that no tool could have caught. The gap
 between those two is the whole job.

@@ -1,114 +1,97 @@
-# toolshop-agents-ci
+# AI-generated Playwright tests, reviewed like production code
 
-Playwright's test agents — planner, generator, healer — wired into CI against a
-real application, with the guardrails they do not ship with.
+This is a small Playwright suite for the public
+[Toolshop](https://practicesoftwaretesting.com) demo application. I used
+Playwright's Claude agents to explore the catalogue, plan tests and generate four
+UI scenarios. Then I reviewed their output instead of treating a green check as
+proof of quality.
 
-The application under test is [Toolshop](https://practicesoftwaretesting.com), a
-public demo storefront that also exposes a documented REST API and, usefully, a
-second build of that API with deliberate bugs in it.
+The result is deliberately small: **5 UI tests, 10 API tests and one CI
+workflow**. The interesting part is not the test count. It is how I checked that
+AI-generated tests can actually fail for the right reason.
 
-## The part worth your time
+## The 3-minute review
 
-Anyone can point an agent at an app and commit whatever it produces. The
-interesting question is the one that comes next: **how do you know the generated
-tests actually test anything?** A suite of `expect(response.ok())` calls is green
-against a working build and green against a quietly broken one, and then the green
-tick is worse than no tick, because it gets trusted.
+1. Read [`docs/prompt-to-test.md`](docs/prompt-to-test.md). It follows one test
+   from prompt, through flawed generated code, to a passing and meaningful test.
+2. Compare the raw generator output (`02ddf74`) with my review (`52d9baf`):
+   `git diff 02ddf74 52d9baf`.
+3. Look at [`scripts/assert-bugs-caught.ts`](scripts/assert-bugs-caught.ts). It
+   fails CI if the API suite stops detecting four known defects in Toolshop's
+   deliberately broken API build.
 
-Two checks here answer that, and both work backwards — they fail when something
-*passes*.
+That is the project in one sentence:
 
-### 1. The suite must fail against a build that is known to be broken
+> AI handled exploration and test mechanics; I chose what was worth automating
+> and proved the resulting tests fail when the product is wrong.
 
-The API tests run twice: against the healthy API, where they must all pass, and
-against `api-with-bugs.practicesoftwaretesting.com`, where they must fail in
-exactly four places. `scripts/assert-bugs-caught.ts` fails the job if a
-catalogued defect stops being detected, *and* if anything fails that is not
-catalogued — red in the wrong place is a broken test, not a caught bug.
+## What happened
 
-The four defects I found by hand and then covered:
+The planner produced 28 catalogue scenarios. I selected four that exercise four
+different mechanisms: pagination, empty search results, numeric sorting and
+hierarchical filters. Generating permutations of the other 24 would add volume,
+not much new information.
 
-| Defect | Why it matters |
-| --- | --- |
-| Anonymous `GET /invoices` answers `200` and returns other customers' invoices | Authorisation bypass. No UI test would ever see it. |
-| `GET /brands` returns integer ids and `"Brand name 1"` placeholders | Broken contract against the documented ULIDs |
-| Product ids are integers, not ULIDs | Same, on the busiest endpoint |
-| `GET /products/7abc` returns product 7, `GET /products/01ZZZ…` returns product 1 | The id is coerced to an integer, so a malformed id silently resolves to the *wrong resource* instead of 404 |
+The generator created all four UI tests in about four minutes and reported that
+they looked correct. On the first run, three failed. During review I found:
 
+- one-shot DOM reads racing a re-render;
+- a sorting assertion that could pass with only one product and test no ordering;
+- a selector bug in my seed test that the agent copied correctly;
+- a live locator resolving to a different checkbox after a click.
+
+The raw plan and generated tests were committed before my corrections, so the
+history shows the actual collaboration rather than a reconstructed success story.
+
+## Proving the tests have teeth
+
+Toolshop exposes both a healthy API and a build with deliberate defects. The same
+API test code runs against both:
+
+```bash
+pnpm test:api   # 10 tests must pass against the healthy API
+pnpm bug-hunt  # exactly 4 known defects must be detected in the broken API
 ```
-pnpm test:api     # green against the healthy API
-pnpm bug-hunt     # must go red against the broken one, in those four places
-```
 
-### 2. The healer is not allowed to silence a test
+The broken build includes an anonymous invoice-access vulnerability, malformed
+brand and product contracts, and path-id coercion that can return the wrong
+resource. `bug-hunt` fails if a known defect is no longer caught or if an
+unexpected test fails. Red in the wrong place is a broken test, not evidence of a
+caught bug.
 
-`.claude/agents/playwright-test-healer.md` is generated by
-`playwright init-agents` — Playwright's file, not mine. It ends with:
+## Run it
 
-> If the error persists and you have high level of confidence that the test is
-> correct, mark this test as `test.fixme()` so that it is skipped during the
-> execution.
-
-together with *"do the most reasonable thing possible to pass the test"*. So the
-officially shipped healer may turn a red test into a skipped one and call the job
-done. Given write access to `main`, that is a machine for making pipelines green
-without fixing anything.
-
-`eslint.config.js` runs `no-skipped-test` with `disallowFixme`, plus rules against
-the other ways a test can pass while checking nothing: no assertion at all, an
-assertion that cannot fail, an assertion behind a branch that never runs, a fixed
-sleep instead of a condition, `networkidle` on an app where it never settles.
-
-And because a config file only *claims* all that, `pnpm guardrails` lints a
-fixture that violates every rule on purpose and fails if any rule stopped firing.
-
-In `heal.yml` the healer may only touch `tests/**` and may only ever open a pull
-request. The guardrails then run on that pull request. **The agent proposes, the
-guardrails judge, a human merges.**
-
-## Verify this in 3 minutes
+Requires Node.js 24 and pnpm 11.
 
 ```bash
 pnpm install
 pnpm exec playwright install chromium
 
-pnpm test:api      # 10 passed
-pnpm bug-hunt      # 4 failed, all four catalogued — script exits 0
-pnpm guardrails    # all 7 guardrails fired
-pnpm lint          # clean
-pnpm test:ui       # the generated UI tests
+pnpm typecheck
+pnpm lint
+pnpm guardrails
+pnpm test:api
+pnpm test:ui
+pnpm bug-hunt
 ```
 
-Then, if you have another two minutes:
+`pnpm guardrails` proves that the lint rules still reject seven common ways an
+AI-written test can become falsely green: skips, `fixme`, focused tests, missing
+assertions, conditional test logic, fixed sleeps, `networkidle` and commented-out
+tests.
 
-- [`docs/prompt-to-test.md`](docs/prompt-to-test.md) — one scenario from prompt to
-  passing test, including what the generator got wrong and how I caught it.
-- [`docs/trade-offs.md`](docs/trade-offs.md) — where the agents paid for
-  themselves and where they did not.
-- `git log` — the planner's and generator's raw output is committed *before* my
-  corrections, so the diff is the review.
+## Repository map
 
-## How it was built
+```text
+docs/prompt-to-test.md        prompt → generated test → review → green
+specs/product-catalog.md      raw planner output
+tests/ui/                     four generated scenarios after human review
+tests/api/                    API contract and authorisation tests
+scripts/assert-bugs-caught.ts proof that the API tests detect known defects
+.claude/                      the agent setup and my review checklist
+.github/workflows/ci.yml      one reproducible CI pipeline
+```
 
-`specs/` is written by Playwright's planner agent, unedited. `tests/ui/` is
-written by its generator agent, committed raw and then corrected in a separate
-commit. `tests/api/`, the two inverted checks, the guardrails and the two skills
-in `.claude/skills/` (`review-agent-test`, `flake-triage`) are mine.
-
-The planner produced 28 scenarios for the product catalog. I generated four of
-them. Deciding which four — and saying why the other 24 were not worth automating
-yet — is in `docs/trade-offs.md`.
-
-## Known gaps
-
-- **`heal.yml` has not run yet.** GitHub Actions cannot start on this account
-  ("your account is locked due to a billing issue"), so the healer workflow is
-  reviewed but unexercised. I would rather say that than imply a green run exists.
-- **No checkout coverage.** I pointed the same planner at the authenticated
-  cart → checkout → invoice flow and killed it after 42 minutes with nothing
-  written; the read-only catalogue took 19. Exploring a stateless surface is
-  cheap, exploring a stateful flow was not. Details in `docs/trade-offs.md`.
-- **No mobile.** Playwright covers mobile web viewports, not native apps. Appium
-  is not here and I am not pretending otherwise.
-- The demo API is a shared public sandbox. Tests assert on shapes and invariants
-  rather than on seeded values, because the data changes underneath them.
+The application and its data are public shared fixtures, so the tests assert on
+contracts and invariants rather than records that can change during a reseed.
+More detail on scope and trade-offs is in [`docs/trade-offs.md`](docs/trade-offs.md).

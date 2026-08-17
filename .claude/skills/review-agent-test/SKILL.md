@@ -1,6 +1,6 @@
 ---
 name: review-agent-test
-description: Review a Playwright test that an AI agent wrote or repaired, before it is committed. Use after a generator or healer agent produces or edits a test, when reviewing a PR that touches tests/, or whenever a test needs checking for whether it can actually fail.
+description: Review a Playwright test that an AI agent wrote before it is committed. Use after a generator produces or edits a test, when reviewing a PR that touches tests/, or whenever a test needs checking for whether it can actually fail.
 ---
 
 # Reviewing a test an agent wrote
@@ -79,13 +79,12 @@ Watch for:
   people are mutating that database while your suite runs.
 - Does it clean up, or does the tenth run behave differently from the first?
 
-## 7. Did the agent silence something?
+## 7. Did the generated diff silence something?
 
 Check the diff, not just the file:
 
-- `test.skip` or `test.fixme` added. Playwright's own healer agent definition is
-  explicitly permitted to `test.fixme()` a test it cannot fix, so this is the
-  expected failure mode, not a rare one.
+- `test.skip` or `test.fixme` added, turning a visible failure into an invisible
+  coverage gap.
 - An assertion loosened — `toHaveText` weakened to `toContainText`, an exact
   count replaced by `toBeGreaterThan( 0 )`, a specific error replaced by a
   regex that matches anything.

@@ -1,0 +1,64 @@
+name: test suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # The target is a live public application, so a nightly run catches drift.
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: test-suite-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: generated tests + proof they catch bugs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - run: corepack enable pnpm
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Static checks and AI-test guardrails
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm guardrails
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Tests against the healthy application
+        run: |
+          pnpm test:api
+          pnpm test:ui
+
+      - name: Prove the API tests catch the known-broken build
+        run: pnpm bug-hunt
+
+      - name: Upload Playwright evidence
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+            reports/buggy.json
+          retention-days: 14

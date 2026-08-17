@@ -6,7 +6,7 @@ import { catalog, readNames } from './support/catalog.js';
 
 test.describe( 'Product Grid Browsing & Pagination', () => {
 	test( 'Navigating between pages updates the product set without duplicates', async ( { page } ) => {
-		const { names, pageButtons, pageButton } = catalog( page );
+		const { names, pageButtons, paginationButton } = catalog( page );
 
 		await page.goto( '/' );
 		await expect( names.first() ).toBeVisible();
@@ -24,7 +24,7 @@ test.describe( 'Product Grid Browsing & Pagination', () => {
 		expect( page1Names.length ).toBeGreaterThan( 0 );
 
 		// 2. Click the 'Page-2' pagination button.
-		await pageButton( 2 ).click();
+		await paginationButton( 2 ).click();
 
 		// The active-page class flips before the grid re-renders. Waiting on that
 		// class is exactly what made the generated version read page 1 twice and

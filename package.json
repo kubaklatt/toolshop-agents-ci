@@ -2,7 +2,7 @@
   "name": "toolshop-agents-ci",
   "version": "0.0.0",
   "private": true,
-  "description": "Playwright test agents (planner/generator/healer) wired into CI, with guardrails that catch the agent cheating.",
+  "description": "AI-generated Playwright tests with human review and proof that they catch known defects.",
   "type": "module",
   "packageManager": "pnpm@11.9.0",
   "engines": {
