@@ -14,11 +14,11 @@ pnpm exec playwright test --project=ui --project=api-clean
 
 `api-buggy` is **not** part of this workflow (it belongs to `bug-hunt.yml`), so its
 results are out of scope for diagnosing why the `tests` workflow failed, even
-though `test_run` with no filter exercises it too. I re-ran with
-`--project=ui --project=api-clean` explicitly to match the workflow, three
-times total, to check for flake.
+though an unfiltered `test_run` exercises it too. I re-ran with
+`--project=ui --project=api-clean` explicitly to match the workflow (and once
+unfiltered, to see the full picture), on 2026-08-17.
 
-### Result, every time: 13 pass, 2 fail, always the same 2
+### Result: 13 pass, 2 fail, always the same 2
 
 - `api-clean` › `api/auth.spec.ts` › "POST /users/login issues a token for the
   demo customer" — expected `200`, got `423`.
@@ -27,7 +27,8 @@ times total, to check for flake.
   `423` before the test's own assertions even run.
 
 All `ui` tests (`seed.spec.ts` + the four `ui/*.spec.ts` specs) and the other
-two `api-clean` `auth.spec.ts` tests passed consistently across all runs.
+two `api-clean` `auth.spec.ts` tests (wrong-password → 401, anonymous
+`/invoices` → 401) passed consistently across every run.
 
 ### Root cause: the shared demo account is locked
 
@@ -40,7 +41,7 @@ itself says so, verbatim, in the response body:
 423 { "error": "Account locked, too many failed attempts. Please contact the administrator." }
 ```
 
-Reproduced identically on three separate full test-runner invocations, with no
+Reproduced identically on repeated full test-runner invocations today, with no
 variation in status code or body — this is not a timing-sensitive or
 intermittent condition, it is a persistent state on the external host.
 
@@ -64,8 +65,8 @@ maintains the lock.
 ### Why I did not "fix" this by editing tests
 
 - Raising a timeout or adding retries would not help: the API gives no signal
-  that the lock is time-limited, and it isn't a race — 3/3 reproductions, same
-  status, same body, no variance.
+  that the lock is time-limited, and it isn't a race — every reproduction
+  today gave the same status, same body, no variance.
 - Swapping `DEMO_CUSTOMER` for a different account, or loosening the
   assertions (e.g. accepting `423` as well as `200`), would stop the test from
   verifying the thing it exists to verify — that the specific, documented demo
@@ -86,7 +87,10 @@ maintains the lock.
   intended, catalogued output of `scripts/assert-bugs-caught.ts`'s
   `KNOWN_DEFECTS` list, gated by the separate `bug-hunt` workflow, not by
   `tests`. They are out of scope here and were left untouched — "fixing" them
-  would defeat the purpose of that project.
+  would defeat the purpose of that project. (Verified: all 4 failing titles
+  match `KNOWN_DEFECTS` exactly, and the 2 `api-buggy` `auth.spec.ts` tests not
+  in that list — issues-a-token, and rejects-wrong-password — still pass
+  there, so the buggy build isn't also affected by the account lock.)
 
 ### What a reviewer should check by hand
 
