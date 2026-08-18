@@ -1,18 +1,4 @@
-/**
- * Proves the guardrails still bite.
- *
- * eslint.config.js is a list of claims: "an agent cannot silence a test here",
- * "a test with no assertion is rejected here". A config file makes those claims;
- * it does not demonstrate them. A rule can be silently disabled by a plugin
- * upgrade, a renamed rule id, or a stray override, and `pnpm lint` stays green
- * because nothing in the repo violates the rule any more.
- *
- * So: lint a fixture that violates every guardrail on purpose, and fail if any
- * expected rule did not fire. Same shape as scripts/assert-bugs-caught.ts —
- * a check you never saw fail is not a check.
- *
- * Usage: node scripts/assert-guardrails-bite.ts
- */
+/** Lint deliberate violations and fail if an expected guardrail stops firing. */
 
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
@@ -20,7 +6,6 @@ import { readFile, writeFile, unlink } from 'node:fs/promises';
 const FIXTURE = 'tests/guardrails/violations.fixture.ts';
 const LINT_TARGET = 'tests/guardrails/.violations.lint.ts';
 
-/** Rule -> the agent behaviour it is there to stop. */
 const MUST_FIRE: Record<string, string> = {
 	'playwright/no-skipped-test': 'skipping or fixme-ing a test instead of fixing it',
 	'playwright/no-focused-test': 'leaving .only() so the rest of the suite never runs',
@@ -34,8 +19,7 @@ const MUST_FIRE: Record<string, string> = {
 type Message = { ruleId: string | null };
 type Result = { messages: Message[] };
 
-// The fixture carries an eslint-disable so editors stay quiet. Strip it, lint the
-// copy, then throw the copy away.
+// Strip the editor-only disable from the temporary lint target.
 const source = await readFile( FIXTURE, 'utf8' );
 await writeFile( LINT_TARGET, source.replace( '/* eslint-disable */\n', '' ) );
 
@@ -51,7 +35,6 @@ try {
 			{ encoding: 'utf8', stdio: [ 'ignore', 'pipe', 'pipe' ] }
 		);
 	} catch ( error ) {
-		// eslint exits non-zero when it reports problems, which is the expected path.
 		stdout = ( error as { stdout?: string } ).stdout ?? '';
 	}
 
@@ -87,7 +70,7 @@ if ( silent.length > 0 ) {
 	lines.push( '### A guardrail stopped firing' );
 	lines.push( '' );
 	lines.push( 'The fixture still contains the violation, so the rule was disabled, renamed,' );
-	lines.push( 'or overridden. Until this is fixed, an agent can do this and CI will not notice.' );
+	lines.push( 'or overridden. The affected rule is not enforced until this is fixed.' );
 	lines.push( '' );
 	for ( const rule of silent ) {
 		lines.push( `- \`${ rule }\` — ${ MUST_FIRE[ rule ] }` );

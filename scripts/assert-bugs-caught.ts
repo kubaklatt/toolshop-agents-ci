@@ -1,30 +1,8 @@
-/**
- * Inverted assertion.
- *
- * `pnpm test:api` proves the suite is green against a working build. That is
- * only half of what you need to know. A suite of `expect(response.ok())` calls
- * is also green against a build that is quietly broken — and then the green tick
- * is worse than no tick at all, because it is trusted.
- *
- * So the same test code runs a second time against api-with-bugs, a deliberately
- * broken build of the same API, and this script asserts the suite *failed in
- * exactly the places it should*:
- *
- *   - a known defect whose test now passes  -> the suite stopped detecting it
- *   - a failure that is not a known defect  -> flake, or a new defect
- *
- * Either outcome fails the job. "Everything went red" is not good enough; red
- * in the wrong place is a broken test, not a caught bug.
- *
- * Usage: node scripts/assert-bugs-caught.ts [path-to-playwright-json-report]
- */
+/** Verify that api-buggy fails for every known defect and nowhere else. */
 
 const PROJECT = 'api-buggy';
 
-/**
- * Defects confirmed by hand against api-with-bugs.practicesoftwaretesting.com,
- * each mapped to the test that must catch it. Keyed by test title.
- */
+// Defects confirmed manually, keyed by the test that must catch each one.
 const KNOWN_DEFECTS: Record<string, string> = {
 	'GET /invoices refuses to serve invoices to an anonymous caller':
 		'Authorisation bypass: anonymous GET /invoices answers 200 and returns other ' +
@@ -98,7 +76,7 @@ if ( unexpected.length > 0 ) {
 	lines.push( '### Unexpected failure' );
 	lines.push( '' );
 	lines.push( 'Not a catalogued defect — a new bug in the broken build, or a flaky test.' );
-	lines.push( 'Both deserve a human.' );
+	lines.push( 'Investigate before accepting this run.' );
 	lines.push( '' );
 	for ( const title of unexpected ) {
 		lines.push( `- ${ title }` );

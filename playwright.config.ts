@@ -1,10 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * Three projects, two of which run the *same* API test code against different
- * hosts. `api-buggy` points at a deliberately broken build of the same API —
- * see scripts/assert-bugs-caught.ts for why that matters.
- */
+// The same API tests run against healthy and deliberately broken builds.
 const UI_BASE_URL = process.env.UI_BASE_URL ?? 'https://practicesoftwaretesting.com';
 const API_BASE_URL = process.env.API_BASE_URL ?? 'https://api.practicesoftwaretesting.com';
 const API_BUGGY_URL = process.env.API_BUGGY_URL ?? 'https://api-with-bugs.practicesoftwaretesting.com';
@@ -25,9 +21,7 @@ export default defineConfig( {
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
 
-		// The app annotates elements with `data-test`, not the Playwright default
-		// `data-testid`. Without this, every getByTestId() an agent writes silently
-		// matches nothing.
+		// Toolshop uses data-test instead of Playwright's data-testid default.
 		testIdAttribute: 'data-test'
 	},
 	projects: [
