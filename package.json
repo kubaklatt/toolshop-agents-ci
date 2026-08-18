@@ -2,7 +2,7 @@
   "name": "toolshop-agents-ci",
   "version": "0.0.0",
   "private": true,
-  "description": "AI-generated Playwright tests with human review and proof that they catch known defects.",
+  "description": "AI-generated Playwright tests, shaped through review and proven against known defects.",
   "type": "module",
   "packageManager": "pnpm@11.9.0",
   "engines": {

@@ -16,7 +16,7 @@ useful coverage.
 | --- | ---: | --- |
 | Explore the catalogue and propose scenarios | ~19 min | 28 scenarios and several behaviours I had not noticed |
 | Generate four Playwright tests | ~4 min | four test files with useful locators and structure |
-| Human review and repair | ~40 min | three broken tests fixed; one false-green condition removed |
+| Review and repair | ~40 min | three broken tests fixed; one false-green condition removed |
 
 The planner was the clearest productivity win. The generator was useful for
 mechanics, but not capable of deciding whether its assertions were meaningful.

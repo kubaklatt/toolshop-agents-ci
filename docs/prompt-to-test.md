@@ -11,7 +11,7 @@ One scenario, end to end, including the part that is usually left out.
   a meaningless ordering assertion fail loudly.
 
 The [raw generator output](https://github.com/kubaklatt/toolshop-agents-ci/commit/02ddf74)
-and [human review diff](https://github.com/kubaklatt/toolshop-agents-ci/compare/02ddf74...52d9baf)
+and [review diff](https://github.com/kubaklatt/toolshop-agents-ci/compare/02ddf74...52d9baf)
 are both preserved. The rest of this page shows the evidence.
 
 I picked the sorting test for this walkthrough because it failed in two different
@@ -114,12 +114,13 @@ test: *under what conditions does this pass?*
 ## 4. The fix
 
 ```ts
-// Precondition, asserted once and loudly — an ordering claim over fewer than two
-// values is vacuous, and should fail here rather than pass quietly later.
-expect(
-	( await pricesOnPage() ).length,
-	'an ordering assertion is meaningless with fewer than two prices'
-).toBeGreaterThanOrEqual( 2 );
+const initialPrices = await pricesOnPage();
+expect( initialPrices.length ).toBeGreaterThanOrEqual( 2 );
+expect( new Set( initialPrices ).size ).toBeGreaterThanOrEqual( 2 );
+
+// Establish a known order, then prove both transitions.
+await sort.selectOption( 'Price (High - Low)' );
+await expect.poll( async () => isDescending( await pricesOnPage() ) ).toBe( true );
 
 await sort.selectOption( 'Price (Low - High)' );
 await expect
@@ -127,10 +128,16 @@ await expect
 		message: 'prices should settle into ascending order'
 	} )
 	.toBe( true );
+
+const lowToHigh = await pricesOnPage();
+await sort.selectOption( 'Price (High - Low)' );
+await expect.poll( async () => isDescending( await pricesOnPage() ) ).toBe( true );
+expect( await pricesOnPage() ).not.toEqual( lowToHigh );
 ```
 
-Polling replaces the race: it retries until the grid settles. The separate
-precondition removes the vacuous-pass. And `isAscending` lives in
+Polling replaces the race: it retries until the grid settles. The preconditions
+remove the vacuous-pass, while the two transitions prove that both sort directions
+actually change the result. `isAscending` and `isDescending` live in
 `tests/ui/support/catalog.ts` rather than in the test body, because
 `playwright/no-conditional-in-test` rejects the `&&`/`||` inside it — the
 guardrail caught me as well as the generator, and it was right to.
@@ -147,7 +154,8 @@ guardrail caught me as well as the generator, and it was right to.
 5 passed
 ```
 
-The full review is `git diff 02ddf74 52d9baf`.
+The original review is `git diff 02ddf74 52d9baf`; the current test adds the
+stronger two-transition check shown above.
 
 ## What I take from this
 

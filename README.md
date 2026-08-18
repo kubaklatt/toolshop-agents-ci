@@ -17,7 +17,7 @@ AI-generated tests can actually fail for the right reason.
 1. Read [`docs/prompt-to-test.md`](docs/prompt-to-test.md). It follows one test
    from prompt, through flawed generated code, to a passing and meaningful test.
 2. Open the [raw generator output](https://github.com/kubaklatt/toolshop-agents-ci/commit/02ddf74)
-   and the [human review diff](https://github.com/kubaklatt/toolshop-agents-ci/compare/02ddf74...52d9baf).
+   and the [review diff](https://github.com/kubaklatt/toolshop-agents-ci/compare/02ddf74...52d9baf).
    No clone is needed; locally, the same comparison is `git diff 02ddf74 52d9baf`.
 3. Look at [`scripts/assert-bugs-caught.ts`](scripts/assert-bugs-caught.ts). It
    fails CI if the API suite stops detecting four known defects in Toolshop's
@@ -90,7 +90,7 @@ that passes only on retry still fails the workflow.
 ```text
 docs/prompt-to-test.md        prompt → generated test → review → green
 specs/product-catalog.md      raw planner output (limitations noted in specs/ABOUT.md)
-tests/ui/                     four generated scenarios after human review
+tests/ui/                     four generated scenarios after review
 tests/api/                    API contract and authorisation tests
 scripts/assert-bugs-caught.ts proof that the API tests detect known defects
 .claude/                      the agent setup and my review checklist

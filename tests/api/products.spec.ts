@@ -31,6 +31,7 @@ test( 'GET /products?sort=price,asc orders by ascending price', async ( { reques
 	const prices: number[] = ( await response.json() ).data.map( ( p: { price: number } ) => p.price );
 
 	expect( prices.length ).toBeGreaterThan( 1 );
+	expect( new Set( prices ).size, 'sorting needs at least two distinct prices' ).toBeGreaterThan( 1 );
 	expect( prices ).toEqual( [ ...prices ].sort( ( a, b ) => a - b ) );
 } );
 
